@@ -1,0 +1,12 @@
+{
+  "name": "stub-pasarela",
+  "version": "1.0.0",
+  "description": "Pasarela de pagos simulada que falla aleatoriamente",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}
