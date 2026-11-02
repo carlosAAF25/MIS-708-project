@@ -1,0 +1,17 @@
+{
+  "name": "pedidos",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "pg": "^8.13.0",
+    "knex": "^3.1.0",
+    "amqplib": "^0.10.4",
+    "pino": "^9.5.0",
+    "axios": "^1.7.7",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
