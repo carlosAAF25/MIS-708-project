@@ -46,7 +46,36 @@ app.post('/v1/catalogo/reservar', verificarToken, async (req, res) => {
         res.status(409).json({ error: error.message }); 
     }
 });
+// Endpoint de Compensación: Libera el stock si el cobro falló
+app.post('/v1/catalogo/liberar', async (req, res) => {
+    const { sucursal_id, items } = req.body;
+    console.log(`[Catálogo][${req.correlationId}] Liberando reserva (Compensación).`);
+    
+    await db.transaction(async trx => {
+        for (const item of items) {
+            await trx('existencias')
+                .where({ sucursal_id, producto_id: item.producto_id })
+                .decrement('reservado', item.cantidad);
+        }
+    });
+    res.status(200).json({ status: 'Reserva liberada' });
+});
 
+// Endpoint de Consolidación: Descuenta el stock definitivo si el cobro fue exitoso
+app.post('/v1/catalogo/consolidar', async (req, res) => {
+    const { sucursal_id, items } = req.body;
+    console.log(`[Catálogo][${req.correlationId}] Consolidando compra de stock.`);
+    
+    await db.transaction(async trx => {
+        for (const item of items) {
+            await trx('existencias')
+                .where({ sucursal_id, producto_id: item.producto_id })
+                .decrement('reservado', item.cantidad)
+                .decrement('cantidad', item.cantidad);
+        }
+    });
+    res.status(200).json({ status: 'Stock consolidado' });
+});
 app.get('/health', (req, res) => res.status(200).json({ status: 'OK' }));
 
 const PORT = 3001;

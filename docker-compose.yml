@@ -20,21 +20,23 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
+    hostname: rabbitmq
     ports:
-      - "5672:5672" # Puerto AMQP para microservicios
-      - "15672:15672" # Panel web para tu demo en vivo
+      - "5672:5672"
+      - "15672:15672"
     healthcheck:
-      test: rabbitmq-diagnostics -q ping
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
   stub-pasarela:
     build: ./stub-pasarela
     ports:
       - "8080:8080"
     environment:
-      - ERROR_RATE=0.3 # 30% de fallos configurables según rúbrica
+      - ERROR_RATE=0.3
       - MAX_LATENCY_MS=5000 
 
   catalogo:
