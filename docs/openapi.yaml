@@ -1,0 +1,114 @@
+openapi: 3.0.3
+info:
+  title: API del Sistema de Pedidos (Saga Orquestada)
+  description: API para la creación y consulta de pedidos utilizando una arquitectura de microservicios con el patrón Saga basado en orquestación y RabbitMQ.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3002
+    description: Servidor Local (Servicio de Pedidos)
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ItemPedido:
+      type: object
+      required:
+        - producto_id
+        - cantidad
+        - precio_unitario
+      properties:
+        producto_id:
+          type: integer
+          example: 1
+        cantidad:
+          type: integer
+          example: 2
+        precio_unitario:
+          type: number
+          format: double
+          example: 45.00
+    PedidoRequest:
+      type: object
+      required:
+        - sucursal_id
+        - items
+      properties:
+        sucursal_id:
+          type: integer
+          example: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPedido'
+paths:
+  /v1/pedidos:
+    post:
+      summary: Crear un nuevo pedido
+      description: Inicia la Saga orquestada para reservar stock de manera síncrona en Catálogo y cobrar de manera asíncrona en Pagos.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoRequest'
+      responses:
+        '202':
+          description: Pedido recibido y Saga iniciada
+          content:
+            application/json:
+              example:
+                mensaje: "Pedido recibido y en proceso"
+                pedido_id: 1
+                correlation_id: "123e4567-e89b-12d3-a456-426614174000"
+        '401':
+          description: Falta token de acceso o es inválido
+        '409':
+          description: No se pudo reservar el stock en Catálogo
+        '500':
+          description: Error interno del servidor
+  /v1/pedidos/{id}:
+    get:
+      summary: Consultar el estado y el historial de un pedido
+      description: Devuelve la información de un pedido específico y todos sus cambios de estado en el tiempo (historial de la Saga).
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numérico del pedido
+      responses:
+        '200':
+          description: Detalles del pedido recuperados con éxito
+          content:
+            application/json:
+              example:
+                pedido:
+                  id: 1
+                  cliente_id: 1
+                  sucursal_id: 1
+                  total: 105.00
+                  estado: "confirmado"
+                  correlation_id: "123e4567-e89b-12d3-a456-426614174000"
+                historial:
+                  - id: 1
+                    pedido_id: 1
+                    estado: "pendiente"
+                    motivo: "Pedido creado por el cliente"
+                    fecha: "2026-11-03T02:00:00.000Z"
+                  - id: 2
+                    pedido_id: 1
+                    estado: "confirmado"
+                    motivo: "Procesado por Pagos"
+                    fecha: "2026-11-03T02:00:05.000Z"
+        '401':
+          description: Falta token de acceso o es inválido
+        '404':
+          description: Pedido no encontrado o no pertenece al usuario autenticado
